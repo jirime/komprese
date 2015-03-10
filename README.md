@@ -1,0 +1,3 @@
+# Komprese
+
+Knihovna pro kompresi.
