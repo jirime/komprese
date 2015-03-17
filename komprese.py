@@ -9,8 +9,8 @@ def rle_encode(data):
         while j < len(data) and j-i < 255 and pismenko == data[j]:
             j += 1
 
-        output.append(pismenko)
-        output.append(j-i)
+        output.append(pismenko)#zapiseme prvni vyskyt pismenka
+        output.append(j-i)#kolikrat tam bylo
 
         i = j
 
