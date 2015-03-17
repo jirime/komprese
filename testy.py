@@ -1,9 +1,12 @@
-from komprese import rle_decode, rle_encode
+from komprese import RLECompressor
 import unittest
 
 class TestRLE(unittest.TestCase):
+    def setUp(self):
+        self.comp = RLECompressor()
+
     def enc_dec(self, data):
-        self.assertEqual(data, rle_decode(rle_encode(data)))
+        self.assertEqual(data, self.comp.decode(self.comp.encode(data)))
 
     def test_empty(self):
         self.enc_dec(b"")

@@ -1,40 +1,86 @@
-def rle_encode(data):
-    output = bytearray()
+class CompressorBase:
+    """
+    Base class (interface) for compression algorithms.
+    Inherit from this class to implement compression methods.
 
-    i = 0
+    Example:
 
-    while i < len(data):
-        pismenko = data[i]
-        j = i + 1
-        while j < len(data) and j-i < 255 and pismenko == data[j]:
-            j += 1
+        class MyCompressor(CompressorBase):
+            def encode(self, data):
+                ...
+            def decode(self, data):
+                ...
 
-        output.append(pismenko)#zapiseme prvni vyskyt pismenka
-        output.append(j-i)#kolikrat tam bylo
+        comp = MyCompressor()
+        data = b"Hello, world"
+        assert data == comp.decode(comp.encode(data))
 
-        i = j
+    """
+    def encode(self, data):
+        """
+        Compress data
 
-    return bytes(output)
+        Arguments:
+            data: input data (bytes object)
 
-def rle_decode(data):
-    output = bytearray()
+        Returns:
+            compressed data (bytes)
 
-    i = 0
+        """
+        raise NotImplementedError
 
-    while i < len(data):
-        pismenko = data[i]
-        k = data[i+1]
+    def decode(self, data):
+        """
+        Decompress data
 
-        for _ in range(k):
-            output.append(pismenko)
+        Arguments:
+            data: input data compressed with encode() method (bytes)
 
-        i += 2
+        Returns:
+            decompressed data (bytes)
 
-    return bytes(output)
+        """
+        raise NotImplementedError
 
 
-if __name__ == "__main__":
-    text = b"aabbbcd"
-    enc = rle_encode(text)
-    dec = rle_decode(enc)
-    assert dec == text
+
+class RLECompressor(CompressorBase):
+    """
+    Run-length Encoding compression
+
+    See http://en.wikipedia.org/wiki/Run-length_encoding
+
+    """
+    def encode(self, data):
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            pismenko = data[i]
+            j = i + 1
+            while j < len(data) and j-i < 255 and pismenko == data[j]:
+                j += 1
+
+            output.append(pismenko)#zapiseme prvni vyskyt pismenka
+            output.append(j-i)#kolikrat tam bylo
+
+            i = j
+
+        return bytes(output)
+
+    def decode(self, data):
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            pismenko = data[i]
+            k = data[i+1]
+
+            for _ in range(k):
+                output.append(pismenko)
+
+            i += 2
+
+        return bytes(output)
