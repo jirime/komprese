@@ -84,3 +84,59 @@ class RLECompressor(CompressorBase):
             i += 2
 
         return bytes(output)
+
+
+class RLEC2ompressor(CompressorBase):
+    """
+    Run-length Encoding compression with escape characters
+
+    """
+
+    def encode(self, data):
+        ESCAPE_CHAR = 0xff
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            pismenko = data[i]
+
+            j = i + 1
+            while j < len(data) and j-i < 255 and pismenko == data[j]:
+                j += 1
+
+            delka_runu = j-i
+
+            if delka_runu > 2 or pismenko == ESCAPE_CHAR:
+                output.append(ESCAPE_CHAR)
+                output.append(delka_runu)
+                output.append(pismenko)
+            else:
+                for _ in range(delka_runu):
+                    output.append(pismenko)
+
+            i = j
+
+        return bytes(output)
+
+
+    def decode(self, data):
+        ESCAPE_CHAR = 0xff
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            pismenko = data[i]
+
+            if pismenko == ESCAPE_CHAR:
+                k = data[i+1]
+                pismenko = data[i+2]
+                for _ in range(k):
+                    output.append(pismenko)
+                i += 3
+            else:
+                output.append(pismenko)
+                i += 1
+
+        return bytes(output)
