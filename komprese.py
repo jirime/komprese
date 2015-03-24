@@ -91,9 +91,9 @@ class RLEC2ompressor(CompressorBase):
     Run-length Encoding compression with escape characters
 
     """
+    ESCAPE_CHAR = 0xff
 
     def encode(self, data):
-        ESCAPE_CHAR = 0xff
         output = bytearray()
 
         i = 0
@@ -107,8 +107,8 @@ class RLEC2ompressor(CompressorBase):
 
             delka_runu = j-i
 
-            if delka_runu > 2 or pismenko == ESCAPE_CHAR:
-                output.append(ESCAPE_CHAR)
+            if delka_runu > 2 or pismenko == self.ESCAPE_CHAR:
+                output.append(self.ESCAPE_CHAR)
                 output.append(delka_runu)
                 output.append(pismenko)
             else:
@@ -121,7 +121,6 @@ class RLEC2ompressor(CompressorBase):
 
 
     def decode(self, data):
-        ESCAPE_CHAR = 0xff
         output = bytearray()
 
         i = 0
@@ -129,7 +128,7 @@ class RLEC2ompressor(CompressorBase):
         while i < len(data):
             pismenko = data[i]
 
-            if pismenko == ESCAPE_CHAR:
+            if pismenko == self.ESCAPE_CHAR:
                 k = data[i+1]
                 pismenko = data[i+2]
                 for _ in range(k):
@@ -138,5 +137,72 @@ class RLEC2ompressor(CompressorBase):
             else:
                 output.append(pismenko)
                 i += 1
+
+        return bytes(output)
+
+
+class LZ77Compressor(CompressorBase):
+    """Lempel-Zif 77 compression"""
+    def search_prefix(word, data, i, j):
+        """
+        search data[i:j] for longest prefix of word
+        returns k, l such that word[:l] == data[k:k+l]
+        """
+        k, l = i, 0
+
+        for zacatek in range(i, j):
+            delka = 0
+            while delka < len(word) and zacatek+delka < j and data[zacatek+delka] == word[delka]:
+                delka += 1
+
+            if delka > l:
+                k = zacatek
+                l = delka
+
+        return k, l
+
+    def encode(self, data):
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            k, l = self.search_prefix(data[i:], data, max(0, i-254), i)
+            if l > 3:
+                offset = i - k
+                output.append(0xff)
+                output.append(offset)
+                output.append(l)
+                i = i + l
+            else:
+                if data[i] == 0xff:
+                    output.append(0xff)
+                    output.append(0x00)
+                else:
+                    output.append(data[i])
+                i = i + 1
+
+        return bytes(output)
+
+    def decode(self, data):
+        output = bytearray()
+
+        i = 0
+
+        while i < len(data):
+            if data[i] != 0xff:
+                output.append(data[i])
+                i = i + 1
+            else:
+                if data[i + 1] == 0:
+                    output.append(data[i])
+                    i = i + 2
+                else:
+                    offset = data[i + 1]
+                    length = data[i + 2]
+                    j = len(output) - offset
+                    for k in range(length):
+                        output.append(output[j + k])
+                    i = i + 3
 
         return bytes(output)
